@@ -1,0 +1,145 @@
+// examples from : https://docs.gradle.org/current/userguide/tutorial_using_tasks.html
+
+// to run
+// java -classpath gradle/wrapper/gradle-wrapper.jar org.gradle.wrapper.GradleWrapperMain hello
+// add -q param for just the output (quiet mode)
+
+task hello {
+    doLast {
+        println 'Hello world!'
+    }
+}
+
+task hello1 << {
+    println 'Hello world 1!'
+}
+
+task upper << {
+    String someString = 'mY_nAmE'
+    println "Original: " + someString 
+    println "Upper case: " + someString.toUpperCase()
+}
+
+task count << {
+    4.times { print "$it " }
+}
+
+// executes intro first
+task respond(dependsOn: 'intro') << {
+    println "I'm Rob"
+}
+
+// executes hello first
+task intro(dependsOn: hello) << {
+    println "I'm Gradle"
+}
+
+// 14.6 dynamic task creation - gradle -q taska1
+4.times { counter ->
+    task "taska$counter" << {
+        println "I'm task number $counter"
+    }
+}
+
+//14.7. Manipulating existing tasks gradle -q taskb0
+4.times { counter ->
+    task "taskb$counter" << {
+        println "I'm task number $counter"
+    }
+}
+taskb0.dependsOn taskb2, taskb3
+
+task taskc << {
+    println 'Hello Earth'
+}
+taskc.doFirst {
+    println 'Hello Venus'
+}
+taskc.doLast {
+    println 'Hello Mars'
+}
+taskc << {// ,, == .doLast
+    println 'Hello Jupiter'
+}
+
+// 14.8. Shortcut notations
+task taskd << {
+    println 'Hello world!'
+}
+taskd.doLast {
+    println "Greetings from the $taskd.name task."
+}
+
+//14.9. Extra task properties
+task taske {
+    ext.myProperty = "myValue"
+}
+
+task printTaskeProperties << {
+    println taske.myProperty
+}
+
+// 14.10. Using Ant Tasks
+// cats all files in filetree
+task loadfile << {
+    def files = file('filetree').listFiles().sort()
+    files.each { File file ->
+        if (file.isFile() && !file.getName().equals(".DS_Store")) {
+            ant.loadfile(srcFile: file, property: file.name)
+            println " *** $file.name ***"
+            println "${ant.properties[file.name]}"
+        }
+    }
+}
+
+// 14.11. Using methods - fileList(String dir)
+task checksum1411 << {
+    fileList1411('filetree').each {File file ->
+        ant.checksum(file: file, property: "cs_$file.name")
+        println "$file.name Checksum: ${ant.properties["cs_$file.name"]}"
+    }
+}
+
+task loadfile1411 << {
+    fileList1411('filetree').each {File file ->
+        ant.loadfile(srcFile: file, property: file.name)
+        println "I'm fond of $file.name"
+    }
+}
+
+File[] fileList1411(String dir) {
+    file(dir).listFiles({file -> file.isFile() } as FileFilter).sort()
+}
+
+// 14.12. Default tasks
+// executes default tasks automatically: java -classpath gradle/wrapper/gradle-wrapper.jar org.gradle.wrapper.GradleWrapperMain
+defaultTasks 'clean1412', 'run1412'
+
+task clean1412 << {
+    println 'Default Cleaning 1412!'
+}
+
+task run1412 << {
+    println 'Default Running 1412!'
+}
+
+task other1412 << {
+    println "I'm not a default task!"
+}
+
+//14.13. Configure by DAG
+task distribution1413 << {
+    println "We build the zip with version=$version"
+}
+
+task release1413(dependsOn: 'distribution1413') << {
+    println 'We release now'
+}
+
+gradle.taskGraph.whenReady {taskGraph ->
+    if (taskGraph.hasTask(release1413)) {
+        version = '1.0' 
+    } else {
+        version = '1.0-SNAPSHOT'
+    }
+}

@@ -1,0 +1,23 @@
+// https://docs.gradle.org/current/userguide/more_about_tasks.html
+
+//17.1. Defining tasks
+task('17_1a') << {
+    println "hello"
+}
+
+task('17_1b', type: Copy) {
+	delete(buildDir)
+    from(file('srcDir'))
+    into(buildDir)
+}
+
+// Example 17.3. Defining tasks with alternative syntax
+tasks.create(name: '17_1_3') << {
+    println "hello 17_1_3"
+}
+
+tasks.create(name: '17_1_3a', type: Copy) {
+    delete(buildDir)
+    from(file('srcDir'))
+    into(buildDir)
+}

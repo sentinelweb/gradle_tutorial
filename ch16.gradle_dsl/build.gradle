@@ -1,0 +1,149 @@
+// https://docs.gradle.org/current/userguide/writing_build_scripts.html
+
+println "nameroot :$name"
+task task16_2 << {
+	println "task.name :$name"
+	println "project.name: $project.name"
+}
+
+// About projects: https://docs.gradle.org/current/dsl/org.gradle.api.Project.html
+task task16_21 << {
+	println "project.name: $project.name"
+	println "project.path: $project.path"
+	println "project.description: $project.description"
+	println "project.projectDir: $project.projectDir"
+	println "project.buildDir: $project.buildDir"
+	println "project.group: $project.group"
+	println "project.version: $project.version"
+	println "project.ant: $project.ant"
+}
+
+//16.3 Script interface
+// java -classpath ../gradle/wrapper/gradle-wrapper.jar org.gradle.wrapper.GradleWrapperMain -d task16_3s
+task task16_3a << {// this might use projet.logger
+	logger.log(LogLevel.DEBUG,"a debug log message")
+}
+
+// 16.4.1 variables
+task task16_41 << {
+	def dest = "dest1"
+	println "dest: $dest"
+}
+
+// 16.4.2 
+apply plugin: "java"// need the for sourceSets
+ext {
+    springVersion = "3.1.0.RELEASE"
+    emailNotification = "build@master.org"
+}
+sourceSets.all { ext.purpose = null }
+sourceSets {
+    main {
+        purpose = "production"
+    }
+    test {
+        purpose = "test"
+    }
+    plugin {
+        purpose = "production"
+    }
+}
+
+task task16_42 << {
+    println springVersion
+    println emailNotification
+    sourceSets.matching { it.purpose == "production" }.each { println "$it.name for $it.purpose"}
+}
+
+// 16.5. Configuring arbitrary objects
+task task16_5 << {
+    def pos = configure(new java.text.FieldPosition(10)) {
+        beginIndex = 1
+        endIndex = 5
+    }
+    println pos.class.simpleName
+    println pos.beginIndex
+    println pos.endIndex
+}
+
+// 16.6. Configuring arbitrary objects using an external script
+task task16_6 << {
+    def pos = new java.text.FieldPosition(10)
+    // Apply the script
+    apply from: 'other166.gradle', to: pos
+    println pos.class.simpleName
+    println pos.beginIndex
+    println pos.endIndex
+}
+
+// 16.7. Some Groovy basics
+// 16.7.1. Groovy JDK
+
+task task16_71 << {
+	println configurations.size();
+	configurations.each {c -> println "configuration: $c.name"};
+	// not working :(
+	configurations.runtime.each { File f -> println "runtime: $f" }
+}
+
+//16.7.2. Property accessors
+task task16_72 << {
+	// Using a getter method
+	println project.buildDir
+	println getProject().getBuildDir()
+
+	// Using a setter method
+	project.buildDir = 'target'
+	getProject().setBuildDir('target')
+
+	println project.buildDir
+	println getProject().getBuildDir()
+
+
+}
+
+// 16.7.3. Optional parentheses on method calls
+
+task task16_73 << {
+	test.systemProperty 'some.prop1', 'value1'
+	test.systemProperty('some.prop2', 'value2')
+
+	//test.setProperty 'some.prop1', 'value1'
+	test.setProperty('group', 'value2')
+
+	println "group property: "+test.property('group')
+}
+
+// 16.7.4. List and map literals
+task task16_74 << {
+	test.includes = ['org/gradle/api/**', 'org/gradle/internal/**']
+	test.includes.each {item -> println "include: $item"}
+	List<String> list = new ArrayList<String>()
+	list.add('org/gradle1/api/**')
+	list.add('org/gradle1/internal/**')
+	test.includes = list
+	test.includes.each {item -> println "include: $item"}
+
+	// Map literal.
+	Map<String, String> map = [key1:'value1', key2: 'value2']
+
+	map.keySet().each {key -> println "$key: "+map.get(key)}
+	map.each {key,val -> println "$key: $val"}
+}
+
+// 16.7.5. Closures as the last parameter in a method
+// 
+repositories {
+    println "in repositories closure"
+}
+repositories {
+    println "in next repositories closure"
+}
+repositories() { println "in a repositories closure2" }
+repositories({ println "in a repositories closure3" })
+task task16_75 << {
+	repositories()
+}
+
+
+
