@@ -1,23 +1,187 @@
 // https://docs.gradle.org/current/userguide/more_about_tasks.html
 
 //17.1. Defining tasks
-task('17_1a') << {
+task('ex17_1a') << {
     println "hello"
 }
 
-task('17_1b', type: Copy) {
+task('ex17_1b', type: Copy) {
 	delete(buildDir)
     from(file('srcDir'))
     into(buildDir)
 }
 
 // Example 17.3. Defining tasks with alternative syntax
-tasks.create(name: '17_1_3') << {
+tasks.create(name: 'ex17_1_3') << {
     println "hello 17_1_3"
 }
 
-tasks.create(name: '17_1_3a', type: Copy) {
+tasks.create(name: 'ex17_1_3a', type: Copy) {
     delete(buildDir)
     from(file('srcDir'))
     into(buildDir)
 }
+// 17.2. Locating tasks
+// Example 17.5. Accessing tasks via tasks collection
+task hello
+task ex17_5 {
+	println tasks.hello.name
+	println tasks['hello'].name
+}
+// Example 17.6. Accessing tasks by path - not working :(
+//project(':projectA') {
+//    task hello {
+//    	println "projecta.hello"
+//    }
+//}
+
+
+//task ex17_6 {
+//	println tasks.getByPath('17_1a').path
+//	println tasks.getByPath(':17_1a').path
+//	println tasks.getByPath('projectA:hello').path
+//	println tasks.getByPath(':projectA:hello').path
+//}
+
+// 17.3. Configuring tasks
+//Example 17.8. Configuring a task - various ways
+Copy ex17_8a = task(ex17_8a, type: Copy).doFirst {
+	delete('target')
+}
+ex17_8a.from 'resources'
+ex17_8a.into 'target'
+ex17_8a.include('**/*.txt') //, '**/*.xml', '**/*.properties'
+
+//Example 17.9. Configuring a task - with closure
+task ex17_9(type: Copy)
+ex17_9 {
+	delete('target')
+   from 'resources'
+   into 'target'
+   include('**/*.txt')
+}
+
+//Example 17.12. Adding dependency using task object
+task ex17_12x << {
+    println 'taskX'
+}
+
+task ex17_12y << {
+    println 'taskY'
+}
+
+ex17_12x.dependsOn ex17_12y
+
+//Example 17.13. Adding dependency using closure
+task ex17_13x << {
+    println 'taskX'
+}
+
+ex17_13x.dependsOn {
+    tasks.findAll { task -> task.name.startsWith('lib') }
+}
+
+task lib1ex17_13 << {
+    println 'lib1'
+}
+
+task lib2ex17_13 << {
+    println 'lib2'
+}
+
+task notALibex17_13 << {
+    println 'notALib'
+}
+
+// 17.5. Ordering tasks
+// Example 17.14. Adding a 'must run after' task ordering
+// run task y&x and y will run after x
+task ex17_14x << {
+    println 'taskX'
+}
+task ex17_14y << {
+    println 'taskY'
+}
+ex17_14y.mustRunAfter ex17_14x
+
+
+//Example 17.17. A 'should run after' task ordering is ignored if it introduces an ordering cycle
+// should run after is ignored if a dependency is is specified so z runs first if x is run
+task ex17_17x << {
+    println 'taskX'
+}
+task ex17_17y << {
+    println 'taskY'
+}
+task ex17_17z << {
+    println 'taskZ'
+}
+ex17_17x.dependsOn ex17_17y
+ex17_17y.dependsOn ex17_17z
+ex17_17z.shouldRunAfter ex17_17x
+
+
+// 17.8. Skipping tasks
+// 17.8.1. Using a predicate
+// run with  gradle ex17_8_1 -PskipHello
+task ex17_8_1 << {
+    println 'hello world'
+}
+
+ex17_8_1.onlyIf { !project.hasProperty('skipHello') }
+
+// 17.8.2. Using StopExecutionException
+task ex17_8_2compile << {
+    println 'We are doing the compile.'
+}
+
+ex17_8_2compile.doFirst {
+    // Here you would put arbitrary conditions in real life.
+    // But this is used in an integration test so we want defined behavior.
+    if (true) { throw new StopExecutionException() }
+}
+task ex17_8_2run(dependsOn: 'ex17_8_2compile') << {
+   println 'I am not affected'
+}
+
+// 17.8.3. Enabling and disabling tasks
+task ex17_8_3disableMe << {
+    println 'This should not be printed if the task is disabled.'
+}
+ex17_8_3disableMe.enabled = false
+
+// Example 17.24. Declaring the inputs and outputs of a task
+task ex17_24 {
+    ext.srcFile = file('srcDir/mountains.xml')
+    ext.destDir = new File(buildDir, 'mountains')
+    inputs.file srcFile
+    outputs.dir destDir
+    doLast {
+        println "Transforming source file."
+        destDir.mkdirs()
+        println "Getting mountains ..."
+        def mountains = new XmlParser().parse(srcFile)
+        println "Got mountains ..."
+        mountains.mountain.each { mountain ->
+            def name = mountain.@name
+            println "Making mountain ... $name"
+        	def height = mountain.@height
+            def destFile = new File(destDir, "${name}.txt")
+            destFile.text = "$name -> ${height}\n"
+        }
+    }
+}
+
+// 17.10. Task rules
+// Example 17.25. Task rule - not working :(
+//task pingServer1 {}
+//tasks.addRule("Pattern: ping<ID>") { String taskName ->
+//	println "task: $taskName"
+//    if (taskName.startsWith("ping")) {
+//        task(taskName) << {
+//            println "Pinging: " + (taskName - 'ping')
+//        }
+//    }
+//}
+
+
